@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Radio Backtimer</title>
+
+<style>
+body{
+    font-family:Arial,sans-serif;
+    max-width:700px;
+    margin:40px auto;
+    padding:20px;
+    background:#f5f5f5;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 2px 10px rgba(0,0,0,.1);
+}
+
+h1{
+    margin-top:0;
+}
+
+label{
+    display:block;
+    margin-top:15px;
+    font-weight:bold;
+}
+
+input{
+    width:100%;
+    padding:10px;
+    margin-top:5px;
+    box-sizing:border-box;
+}
+
+button{
+    margin-top:20px;
+    padding:12px 20px;
+    font-size:16px;
+    cursor:pointer;
+}
+
+.result{
+    margin-top:25px;
+    padding:15px;
+    background:#eef7ff;
+    border-radius:8px;
+}
+
+.big{
+    font-size:2rem;
+    font-weight:bold;
+    color:#0066cc;
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+
+<h1>Radio Backtimer</h1>
+
+<label>Target Time</label>
+<input type="time" id="target" step="1">
+
+<label>Item 1 Duration (mm:ss)</label>
+<input type="text" id="item1" placeholder="3:45">
+
+<label>Item 2 Duration (mm:ss)</label>
+<input type="text" id="item2" placeholder="2:00">
+
+<label>Item 3 Duration (mm:ss)</label>
+<input type="text" id="item3" placeholder="4:15">
+
+<button onclick="calculate()">Calculate</button>
+
+<div id="results"></div>
+
+</div>
+
+<script>
+
+function durationToSeconds(str){
+    if(!str) return 0;
+
+    const parts = str.split(":");
+
+    if(parts.length !== 2) return 0;
+
+    return parseInt(parts[0])*60 + parseInt(parts[1]);
+}
+
+function formatTime(date){
+    return date.toLocaleTimeString('en-GB',{
+        hour12:false
+    });
+}
+
+function calculate(){
+
+    const target = document.getElementById("target").value;
+
+    if(!target){
+        alert("Enter a target time");
+        return;
+    }
+
+    const durations = [
+        durationToSeconds(document.getElementById("item1").value),
+        durationToSeconds(document.getElementById("item2").value),
+        durationToSeconds(document.getElementById("item3").value)
+    ].filter(d => d > 0);
+
+    if(durations.length === 0){
+        alert("Enter at least one duration");
+        return;
+    }
+
+    const totalSeconds =
+        durations.reduce((a,b)=>a+b,0);
+
+    const now = new Date();
+
+    const [h,m,s=0] = target.split(":");
+
+    const hitTime = new Date();
+    hitTime.setHours(h,m,s,0);
+
+    let runningStart =
+        new Date(hitTime.getTime() - totalSeconds*1000);
+
+    let html = `
+        <div class="result">
+        <div><strong>Total Duration:</strong>
+        ${Math.floor(totalSeconds/60)}m ${totalSeconds%60}s</div>
+
+        <p class="big">
+        Final Item Starts:
+        ${
+            formatTime(
+                new Date(
+                    hitTime.getTime() -
+                    durations[durations.length-1]*1000
+                )
+            )
+        }
+        </p>
+
+        <h3>Running Order</h3>
+    `;
+
+    durations.forEach((duration,index)=>{
+
+        html += `
+            <div>
+            Item ${index+1} Start:
+            <strong>${formatTime(runningStart)}</strong>
+            </div>
+        `;
+
+        runningStart =
+            new Date(
+                runningStart.getTime() +
+                duration*1000
+            );
+    });
+
+    html += "</div>";
+
+    document.getElementById("results").innerHTML = html;
+}
+</script>
+
+</body>
+</html>
